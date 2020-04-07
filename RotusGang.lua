@@ -1,4 +1,4 @@
-﻿VERSION = "0.1.4"
+﻿VERSION = "0.2.1"
 
 SLASH_TEST1 = "/test1"
 SLASH_ROTUS1 = "/rotus"
