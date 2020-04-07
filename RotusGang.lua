@@ -1,4 +1,4 @@
-﻿VERSION = "0.0.2"
+﻿VERSION = "0.0.3"
 
 SLASH_TEST1 = "/test1"
 SLASH_ROTUS1 = "/rotus"
@@ -12,13 +12,19 @@ local gatheringSpellid = 2366
 
 local currentlyPickingGuid = ""
 
+local zones = {};
+zones["Tirisfal Glades"] = "EPL"
+zones["Winterspring"] = "WS"
+zones["Silithus"] = "Silithus"
+zones["Burning Steppes"] = "Steppes"
+
 local channel = "GUILD"
 --local channel = "RAID"
 local debug = false
 
-local lastPickedHour = nil;
-local lastPickedMinute = nil;
-local lastPickedBy = "";
+local lastPickedHour = {};
+local lastPickedMinute = {};
+local lastPickedBy = {};
 
 now = GetTime();
 antiSpam = {};
@@ -30,24 +36,32 @@ SlashCmdList["TEST"] = function(msg)
 end
 
 SlashCmdList["ROTUS"] = function(cmd)
-  local msg = "";
-  if(lastPickedHour ~=  nil and lastPickedMinute ~= nil) then
-    local nextWindowFromHours, nextWindowFromMinutes = addMinutes(lastPickedHour, lastPickedMinute, 45)
-    local nextWindowToHours, nextWindowToMinutes = addMinutes(nextWindowFromHours, nextWindowFromMinutes, 30)
 
-    msg = lastPickedBy .. " picked the " .. rotusItemLinkItemInfo .. " at " .. addLeadingZero(lastPickedHour) .. ":" .. addLeadingZero(lastPickedMinute) .. "! Next window " .. addLeadingZero(nextWindowFromHours) .. ":" .. addLeadingZero(nextWindowFromMinutes) .. " - " .. addLeadingZero(nextWindowToHours) .. ":" .. addLeadingZero(nextWindowToMinutes) .. "."
-  else
-    msg = "No timer currently."
+  if (cmd == "lost") then
+    C_ChatInfo.SendAddonMessage("RG9", "lost", channel);
+    return
   end
 
-  if(cmd == "chat") then
-    if UnitInRaid("player") then
-      SendChatMessage("[RotusGang] " .. msg, "RAID");
+  for zone,shorthand in pairs(zones) do
+    local msg = "";
+    if(lastPickedHour[zone] ~=  nil and lastPickedMinute[zone] ~= nil) then
+      local nextWindowFromHours, nextWindowFromMinutes = addMinutes(lastPickedHour[zone], lastPickedMinute[zone], 45)
+      local nextWindowToHours, nextWindowToMinutes = addMinutes(nextWindowFromHours, nextWindowFromMinutes, 30)
+
+      msg = lastPickedBy[zone] .. " picked the " .. rotusItemLinkItemInfo .. " in " .. zones[zone] .. " at " .. addLeadingZero(lastPickedHour[zone]) .. ":" .. addLeadingZero(lastPickedMinute[zone]) .. "! Next window " .. addLeadingZero(nextWindowFromHours) .. ":" .. addLeadingZero(nextWindowFromMinutes) .. " - " .. addLeadingZero(nextWindowToHours) .. ":" .. addLeadingZero(nextWindowToMinutes) .. "."
     else
-      SendChatMessage("[RotusGang] " .. msg, "PARTY");
+      msg = "No timer currently for " .. shorthand .. "."
     end
-  else
-    C_ChatInfo.SendAddonMessage("RG9", msgPrefix .. msg, channel);
+
+    if(cmd == "chat") then
+      if UnitInRaid("player") then
+        SendChatMessage("[RotusGang] " .. msg, "RAID");
+      else
+        SendChatMessage("[RotusGang] " .. msg, "PARTY");
+      end
+    else
+      C_ChatInfo.SendAddonMessage("RG9", msgPrefix .. msg, channel);
+    end
   end
 end
 
@@ -68,7 +82,7 @@ C_ChatInfo.RegisterAddonMessagePrefix("RG9");
 f:RegisterEvent("CHAT_MSG_ADDON")
 f:RegisterEvent("CHAT_MSG_LOOT")
 f:RegisterEvent("UNIT_SPELLCAST_SENT")
---f:RegisterEvent("UNIT_SPELLCAST_STOP")
+f:RegisterEvent("UNIT_SPELLCAST_STOP")
 f:RegisterEvent("UNIT_SPELLCAST_FAILED")
 f:RegisterEvent("UNIT_SPELLCAST_INTERRUPTED")
 
@@ -76,6 +90,9 @@ f:RegisterEvent("UNIT_SPELLCAST_INTERRUPTED")
 f:SetScript("OnEvent", function(event,...)
   local type = ...
 
+  if(type == "UNIT_SPELLCAST_STOP") then 
+    print('stop', ...);
+  end
   if(type == "CHAT_MSG_ADDON") then
     local type, prefix, msg, channel, fromGuid, fromName = ...
 
@@ -93,17 +110,30 @@ f:SetScript("OnEvent", function(event,...)
       elseif(msg == "interrupted") then
         print(msgPrefix .. fromName .. " is interrupted!")
       elseif(msg == "failed") then
-        print(msgPrefix .. fromName .. " failed to pick up the " .. rotusItemLink .. "!")
+        print(msgPrefix .. fromName .. "'s attempt to pick up the " .. rotusItemLink .. " failed!")
       elseif(msg == "picked") then
-        lastPickedHour = hour
-        lastPickedMinute = min
-        lastPickedBy = fromName
+        local zone = GetZoneText();
+
+        lastPickedHour[zone] = hour
+        lastPickedMinute[zone] = min
+        lastPickedBy[zone] = fromName
   
         local nextWindowFromHours, nextWindowFromMinutes = addMinutes(hour, min, 45)
         local nextWindowToHours, nextWindowToMinutes = addMinutes(nextWindowFromHours, nextWindowFromMinutes, 30)
   
   
-        print(msgPrefix .. fromName .. " picked the " .. rotusItemLink .. " at " .. addLeadingZero(hour) .. ":" .. addLeadingZero(min) .. "! Next window " .. addLeadingZero(nextWindowFromHours) .. ":" .. addLeadingZero(nextWindowFromMinutes) .. " - " .. addLeadingZero(nextWindowToHours) .. ":" .. addLeadingZero(nextWindowToMinutes) .. ".")
+        print(msgPrefix .. lastPickedBy[zone] .. " picked the " .. rotusItemLink .. " in " .. zones[zone] .. " at " .. addLeadingZero(hour) .. ":" .. addLeadingZero(min) .. "! Next window " .. addLeadingZero(nextWindowFromHours) .. ":" .. addLeadingZero(nextWindowFromMinutes) .. " - " .. addLeadingZero(nextWindowToHours) .. ":" .. addLeadingZero(nextWindowToMinutes) .. ".")
+      elseif(msg == "lost") then
+        local zone = GetZoneText();
+
+        lastPickedHour[zone] = hour
+        lastPickedMinute[zone] = min
+        lastPickedBy[zone] = "Someone"
+  
+        local nextWindowFromHours, nextWindowFromMinutes = addMinutes(hour, min, 45)
+        local nextWindowToHours, nextWindowToMinutes = addMinutes(nextWindowFromHours, nextWindowFromMinutes, 30)
+  
+        print(msgPrefix .. lastPickedBy[zone] .. " picked the " .. rotusItemLink .. " at " .. addLeadingZero(hour) .. ":" .. addLeadingZero(min) .. " :( Next window " .. addLeadingZero(nextWindowFromHours) .. ":" .. addLeadingZero(nextWindowFromMinutes) .. " - " .. addLeadingZero(nextWindowToHours) .. ":" .. addLeadingZero(nextWindowToMinutes) .. ".")      
       else
         print(msg)
       end
