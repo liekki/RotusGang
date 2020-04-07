@@ -1,4 +1,4 @@
-﻿VERSION = "0.0.4"
+﻿VERSION = "0.1.0"
 
 SLASH_TEST1 = "/test1"
 SLASH_ROTUS1 = "/rotus"
@@ -31,7 +31,6 @@ antiSpam = {};
 
 SlashCmdList["TEST"] = function(msg)
   print(msgPrefix .. "Hello World!");
- 
 --   C_ChatInfo.SendAddonMessage("RG9", "test", "GUILD");
 end
 
@@ -60,7 +59,7 @@ SlashCmdList["ROTUS"] = function(cmd)
         SendChatMessage("[RotusGang] " .. msg, "PARTY");
       end
     else
-      C_ChatInfo.SendAddonMessage("RG9", msgPrefix .. msg, channel);
+      C_ChatInfo.SendAddonMessage("RG9", "broadcast," .. msgPrefix .. msg, channel);
     end
   end
 end
@@ -95,21 +94,24 @@ f:SetScript("OnEvent", function(event,...)
 
     if(prefix == "RG9") then
       local hour, min = GetGameTime();
-      if(msg == "test") then
+
+      local msgType, param1 = strsplit(",", msg);
+
+      if(msgType == "test") then
         print(msgPrefix .. fromName .. " is testing broadcasting");
-      elseif(msg == "ping") then
-        print(msgPrefix .. "Ping request received from " .. fromName .. ".")
-        C_ChatInfo.SendAddonMessage("RG9", "pong", channel);
-      elseif(msg == "pong") then
+      elseif(msgType == "ping") then
+        print(msgPrefix .. "Ping request received from " .. fromName .. " (v".. param1 ..").")
+        C_ChatInfo.SendAddonMessage("RG9", "pong,".. VERSION, channel);
+      elseif(msgType == "pong") then
         print(msgPrefix .. fromName .. " replied with a pong")
-      elseif(msg == "picking") then
-        print(msgPrefix ..  fromName .. " is picking a " .. rotusItemLink .. "!")
-      elseif(msg == "interrupted") then
-        print(msgPrefix .. fromName .. " is interrupted!")
-      elseif(msg == "failed") then
+      elseif(msgType == "picking") then
+        print(msgPrefix ..  fromName .. " is picking a " .. rotusItemLink .. " in " .. zones[param1] .. "!")
+      elseif(msgType == "interrupted") then
+        print(msgPrefix .. fromName .. "'s attempt was interrupted!")
+      elseif(msgType == "failed") then
         print(msgPrefix .. fromName .. "'s attempt to pick up the " .. rotusItemLink .. " failed!")
-      elseif(msg == "picked") then
-        local zone = GetZoneText();
+      elseif(msgType == "picked") then
+        local zone = param1
 
         lastPickedHour[zone] = hour
         lastPickedMinute[zone] = min
@@ -120,8 +122,8 @@ f:SetScript("OnEvent", function(event,...)
   
   
         print(msgPrefix .. lastPickedBy[zone] .. " picked the " .. rotusItemLink .. " in " .. zones[zone] .. " at " .. addLeadingZero(hour) .. ":" .. addLeadingZero(min) .. "! Next window " .. addLeadingZero(nextWindowFromHours) .. ":" .. addLeadingZero(nextWindowFromMinutes) .. " - " .. addLeadingZero(nextWindowToHours) .. ":" .. addLeadingZero(nextWindowToMinutes) .. ".")
-      elseif(msg == "lost") then
-        local zone = GetZoneText();
+      elseif(msgType == "lost") then
+        local zone = param1
 
         lastPickedHour[zone] = hour
         lastPickedMinute[zone] = min
@@ -131,8 +133,8 @@ f:SetScript("OnEvent", function(event,...)
         local nextWindowToHours, nextWindowToMinutes = addMinutes(nextWindowFromHours, nextWindowFromMinutes, 30)
   
         print(msgPrefix .. lastPickedBy[zone] .. " picked the " .. rotusItemLink .. " at " .. addLeadingZero(hour) .. ":" .. addLeadingZero(min) .. " :( Next window " .. addLeadingZero(nextWindowFromHours) .. ":" .. addLeadingZero(nextWindowFromMinutes) .. " - " .. addLeadingZero(nextWindowToHours) .. ":" .. addLeadingZero(nextWindowToMinutes) .. ".")      
-      else
-        print(msg)
+      elseif(msgType == "broadcast") then
+        print(param1)
       end
     end   
   end
@@ -149,7 +151,7 @@ f:SetScript("OnEvent", function(event,...)
 
         if(itemId == rotusItemId) then
           if debug then print("Broadcasted rotus pickup!"); end
-          C_ChatInfo.SendAddonMessage("RG9", "picked", channel);
+          C_ChatInfo.SendAddonMessage("RG9", "picked," .. GetZoneText(), channel);
         end
       end
     end
@@ -161,7 +163,7 @@ f:SetScript("OnEvent", function(event,...)
       if(debounce("picking", 0.5)) then
         if debug then print("started picking"); end
         currentlyPickingGuid = guid
-        C_ChatInfo.SendAddonMessage("RG9", "picking", channel);
+        C_ChatInfo.SendAddonMessage("RG9", "picking," .. GetZoneText() , channel);
       end
     end
   end
@@ -171,7 +173,7 @@ f:SetScript("OnEvent", function(event,...)
     if(actor == "player" and spellId == gatheringSpellid and guid == currentlyPickingGuid) then
       if(debounce("interrupted", 0.5)) then
         if debug then print("interrupted"); end
-        C_ChatInfo.SendAddonMessage("RG9", "interrupted", channel);
+        C_ChatInfo.SendAddonMessage("RG9", "interrupted," .. GetZoneText(), channel);
       end
     end
   end
@@ -184,7 +186,7 @@ f:SetScript("OnEvent", function(event,...)
       if(currentlyPickingGuid == guid) then
         if(debounce("failed", 0.5)) then
           if debug then print("failed pickup") end
-          C_ChatInfo.SendAddonMessage("RG9", "failed", channel);
+          C_ChatInfo.SendAddonMessage("RG9", "failed," .. GetZoneText(), channel);
         end
       end
     end
