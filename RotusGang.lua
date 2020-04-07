@@ -9,22 +9,19 @@ local rotusItemId = 13468
 local rotusItemLink = "\124cff1eff00\124Hitem:13468::::::::60:::::\124h[Black Lotus]\124h\124r"
 local rotusItemLinkItemInfo = select(2,GetItemInfo(13468))
 local gatheringSpellid = 2366
+local timeSinceLastUpdate = 0;
 
 local currentlyPickingGuid = ""
 
 local zones = {};
-zones["Eastern Plaguelands"] = "EPL"
-zones["Winterspring"] = "WS"
+zones["Eastern Plaguelands"] = "Eastern Plaguelands"
+zones["Winterspring"] = "Winterspring"
 zones["Silithus"] = "Silithus"
-zones["Burning Steppes"] = "Steppes"
+zones["Burning Steppes"] = "Burning Steppes"
 
 local channel = "GUILD"
 --local channel = "RAID"
 local debug = false
-
-local RotusGang_lastPickedHour = {};
-local RotusGang_lastPickedMinute = {};
-local RotusGang_lastPickedBy = {};
 
 now = GetTime();
 antiSpam = {};
@@ -46,26 +43,33 @@ SlashCmdList["ROTUS"] = function(cmd)
     return
   end
 
+  local numTimers = 0;
+
   for zone,shorthand in pairs(zones) do
     local msg = "";
     if(RotusGang_lastPickedHour[zone] ~=  nil and RotusGang_lastPickedMinute[zone] ~= nil) then
+
       local nextWindowFromHours, nextWindowFromMinutes = addMinutes(RotusGang_lastPickedHour[zone], RotusGang_lastPickedMinute[zone], 45)
       local nextWindowToHours, nextWindowToMinutes = addMinutes(nextWindowFromHours, nextWindowFromMinutes, 30)
 
       msg = RotusGang_lastPickedBy[zone] .. " picked the " .. rotusItemLinkItemInfo .. " in " .. zones[zone] .. " at " .. addLeadingZero(RotusGang_lastPickedHour[zone]) .. ":" .. addLeadingZero(RotusGang_lastPickedMinute[zone]) .. "! Next window " .. addLeadingZero(nextWindowFromHours) .. ":" .. addLeadingZero(nextWindowFromMinutes) .. " - " .. addLeadingZero(nextWindowToHours) .. ":" .. addLeadingZero(nextWindowToMinutes) .. "."
-    else
-      msg = "No timer currently for " .. shorthand .. "."
-    end
 
-    if(cmd == "chat") then
-      if UnitInRaid("player") then
-        SendChatMessage("[RotusGang] " .. msg, "RAID");
+      numTimers = numTimers + 1;
+
+      if(cmd == "chat") then
+        if UnitInRaid("player") then
+          SendChatMessage("[RotusGang] " .. msg, "RAID");
+        else
+          SendChatMessage("[RotusGang] " .. msg, "PARTY");
+        end
       else
-        SendChatMessage("[RotusGang] " .. msg, "PARTY");
-      end
-    else
-      C_ChatInfo.SendAddonMessage("RG9", "broadcast," .. msgPrefix .. msg, channel);
+        C_ChatInfo.SendAddonMessage("RG9", "broadcast," .. msgPrefix .. msg, channel);
+      end  
     end
+  end
+
+  if(numTimers == 0) then
+    print("You dont have any timers to share");      
   end
 end
 
@@ -83,6 +87,7 @@ end
 
 local f = CreateFrame("Frame")
 C_ChatInfo.RegisterAddonMessagePrefix("RG9");
+f:RegisterEvent("VARIABLES_LOADED")
 f:RegisterEvent("CHAT_MSG_ADDON")
 f:RegisterEvent("CHAT_MSG_LOOT")
 f:RegisterEvent("UNIT_SPELLCAST_SENT")
@@ -90,9 +95,23 @@ f:RegisterEvent("UNIT_SPELLCAST_SENT")
 f:RegisterEvent("UNIT_SPELLCAST_FAILED")
 f:RegisterEvent("UNIT_SPELLCAST_INTERRUPTED")
 
-
 f:SetScript("OnEvent", function(event,...)
   local type = ...
+
+  if(type == "VARIABLES_LOADED") then
+    if(RotusGang_lastPickedSerial == nil) then
+      RotusGang_lastPickedSerial = {};
+    end
+    if(RotusGang_lastPickedHour == nil) then
+      RotusGang_lastPickedHour = {};
+    end
+    if(RotusGang_lastPickedMinute == nil) then
+      RotusGang_lastPickedMinute = {};
+    end
+    if(RotusGang_lastPickedBy == nil) then
+      RotusGang_lastPickedBy = {};
+    end
+  end
 
   if(type == "CHAT_MSG_ADDON") then
     local type, prefix, msg, channel, fromGuid, fromName = ...
@@ -100,7 +119,7 @@ f:SetScript("OnEvent", function(event,...)
     if(prefix == "RG9") then
       local hour, min = GetGameTime();
 
-      local msgType, param1 = strsplit(",", msg);
+      local msgType, param1, param2, param3, param4, param5 = strsplit(",", msg);
 
       if(msgType == "test") then
         print(msgPrefix .. fromName .. " is testing broadcasting");
@@ -120,6 +139,11 @@ f:SetScript("OnEvent", function(event,...)
       elseif(msgType == "picked") then
         local zone = param1
 
+        local day = date("%d");
+        local year = date("%Y");
+        local month = date("%m");
+
+        RotusGang_lastPickedSerial[zone] = year..month..day
         RotusGang_lastPickedHour[zone] = hour
         RotusGang_lastPickedMinute[zone] = min
         RotusGang_lastPickedBy[zone] = fromName
@@ -132,6 +156,11 @@ f:SetScript("OnEvent", function(event,...)
       elseif(msgType == "lost") then
         zone = param1
 
+        local day = date("%d");
+        local year = date("%Y");
+        local month = date("%m");
+        
+        RotusGang_lastPickedSerial[zone] = year..month..day
         RotusGang_lastPickedHour[zone] = hour
         RotusGang_lastPickedMinute[zone] = min
         RotusGang_lastPickedBy[zone] = "Someone"
@@ -142,6 +171,25 @@ f:SetScript("OnEvent", function(event,...)
         print(msgPrefix .. RotusGang_lastPickedBy[zone] .. " picked the " .. rotusItemLink .. " at " .. addLeadingZero(hour) .. ":" .. addLeadingZero(min) .. " :( Next window " .. addLeadingZero(nextWindowFromHours) .. ":" .. addLeadingZero(nextWindowFromMinutes) .. " - " .. addLeadingZero(nextWindowToHours) .. ":" .. addLeadingZero(nextWindowToMinutes) .. ".")      
       elseif(msgType == "broadcast") then
         print(param1)
+      elseif(msgType == "syncRequest") then
+        if debug then print("received sync request from " .. fromName) end;
+
+        for zone,shorthand in pairs(zones) do
+          if(RotusGang_lastPickedSerial[zone] ~= nil) then
+            C_ChatInfo.SendAddonMessage("RG9", "syncResponse," .. zone .. "," .. RotusGang_lastPickedSerial[zone] .. "," .. RotusGang_lastPickedHour[zone] .. "," .. RotusGang_lastPickedMinute[zone] .. "," .. RotusGang_lastPickedBy[zone], channel);
+          end
+        end
+      elseif(msgType == "syncResponse") then
+        if debug then print("received sync response from " .. fromName) end;
+
+        if(RotusGang_lastPickedSerial[param1] == nil or tonumber(RotusGang_lastPickedSerial[param1]) < tonumber(param2)) then
+          print("Received new timer for " .. param1)
+
+          RotusGang_lastPickedSerial[param1] = tonumber(param2)
+          RotusGang_lastPickedHour[param1] = tonumber(param3)
+          RotusGang_lastPickedMinute[param1] = tonumber(param4)
+          RotusGang_lastPickedBy[param1] = param5
+        end
       end
     end   
   end
@@ -199,6 +247,23 @@ f:SetScript("OnEvent", function(event,...)
     end
   end
 
+end);
+
+function RotusGang_OnLoad()
+  C_ChatInfo.SendAddonMessage("RG9", "syncRequest", channel);
+end
+
+f:SetScript("OnUpdate", function(self, elapsed)
+  timeSinceLastUpdate = timeSinceLastUpdate + elapsed;
+
+  if (timeSinceLastUpdate > 6.0) then
+
+    if debug then print("Polling for sync"); end;
+
+    C_ChatInfo.SendAddonMessage("RG9", "syncRequest", channel);
+
+    timeSinceLastUpdate = 0;
+  end
 end);
 
 function getItemId(itemString)

@@ -6,5 +6,5 @@
 ## Dependencies:
 ## OptionalDeps:
 ## SavedVariablesPerCharacter:
-## SavedVariables: RotusGang_lastPickedHour RotusGang_lastPickedMinute RotusGang_lastPickedBy
+## SavedVariables: RotusGang_lastPickedSerial, RotusGang_lastPickedHour, RotusGang_lastPickedMinute, RotusGang_lastPickedBy
 RotusGang.xml
