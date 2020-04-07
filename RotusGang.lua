@@ -1,4 +1,4 @@
-﻿VERSION = "0.2.2"
+﻿VERSION = "0.2.3"
 
 SLASH_TEST1 = "/test1"
 SLASH_ROTUS1 = "/rotus"
@@ -19,8 +19,8 @@ zones["Winterspring"] = "Winterspring"
 zones["Silithus"] = "Silithus"
 zones["Burning Steppes"] = "Burning Steppes"
 
---local channel = "GUILD"
-local channel = "RAID"
+local channel = "GUILD"
+--local channel = "RAID"
 local debug = false
 
 now = GetTime();
