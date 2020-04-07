@@ -256,7 +256,7 @@ end
 f:SetScript("OnUpdate", function(self, elapsed)
   timeSinceLastUpdate = timeSinceLastUpdate + elapsed;
 
-  if (timeSinceLastUpdate > 6.0) then
+  if (timeSinceLastUpdate > 60.0) then
 
     if debug then print("Polling for sync"); end;
 
