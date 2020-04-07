@@ -1,4 +1,4 @@
-﻿VERSION = "0.2.1"
+﻿VERSION = "0.2.2"
 
 SLASH_TEST1 = "/test1"
 SLASH_ROTUS1 = "/rotus"
@@ -19,8 +19,8 @@ zones["Winterspring"] = "Winterspring"
 zones["Silithus"] = "Silithus"
 zones["Burning Steppes"] = "Burning Steppes"
 
-local channel = "GUILD"
---local channel = "RAID"
+--local channel = "GUILD"
+local channel = "RAID"
 local debug = false
 
 now = GetTime();
@@ -32,6 +32,11 @@ SlashCmdList["TEST"] = function(msg)
 end
 
 SlashCmdList["ROTUS"] = function(cmd)
+
+  if(cmd == "fake") then 
+    C_ChatInfo.SendAddonMessage("RG9", "picked,Silithus", channel);
+    return
+  end
 
   if (cmd == "lost") then
     C_ChatInfo.SendAddonMessage("RG9", "lost,"..GetZoneText(), channel);
@@ -111,6 +116,8 @@ f:SetScript("OnEvent", function(event,...)
     if(RotusGang_lastPickedBy == nil) then
       RotusGang_lastPickedBy = {};
     end
+
+    C_ChatInfo.SendAddonMessage("RG9", "syncRequest", channel);
   end
 
   if(type == "CHAT_MSG_ADDON") then
@@ -143,7 +150,7 @@ f:SetScript("OnEvent", function(event,...)
         local year = date("%Y");
         local month = date("%m");
 
-        RotusGang_lastPickedSerial[zone] = year..month..day
+        RotusGang_lastPickedSerial[zone] = year..month..day..hour..min
         RotusGang_lastPickedHour[zone] = hour
         RotusGang_lastPickedMinute[zone] = min
         RotusGang_lastPickedBy[zone] = fromName
@@ -160,7 +167,7 @@ f:SetScript("OnEvent", function(event,...)
         local year = date("%Y");
         local month = date("%m");
         
-        RotusGang_lastPickedSerial[zone] = year..month..day
+        RotusGang_lastPickedSerial[zone] = year..month..day..hour..min
         RotusGang_lastPickedHour[zone] = hour
         RotusGang_lastPickedMinute[zone] = min
         RotusGang_lastPickedBy[zone] = "Someone"
@@ -250,7 +257,7 @@ f:SetScript("OnEvent", function(event,...)
 end);
 
 function RotusGang_OnLoad()
-  C_ChatInfo.SendAddonMessage("RG9", "syncRequest", channel);
+  
 end
 
 f:SetScript("OnUpdate", function(self, elapsed)
