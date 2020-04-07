@@ -1,44 +1,53 @@
-﻿
+﻿VERSION = "0.0.2"
+
 SLASH_TEST1 = "/test1"
 SLASH_ROTUS1 = "/rotus"
 
 local msgPrefix = "|cff352838[|r|cff915ea7R|r|cffc572dcotusGang|r|cff352838]|r "
 
 local rotusItemId = 13468
-local rotusItemLink = select(2,GetItemInfo(rotusItemId))
+local rotusItemLink = "\124cff1eff00\124Hitem:13468::::::::60:::::\124h[Black Lotus]\124h\124r"
+local rotusItemLinkItemInfo = select(2,GetItemInfo(13468))
 local gatheringSpellid = 2366
 
 local currentlyPickingGuid = ""
 
+local channel = "GUILD"
+--local channel = "RAID"
 local debug = false
 
-local lastPicked = 0;
+local lastPickedHour = nil;
+local lastPickedMinute = nil;
 local lastPickedBy = "";
 
 now = GetTime();
 antiSpam = {};
 
 SlashCmdList["TEST"] = function(msg)
-   print(prefix .. "Hello World!");
-   C_ChatInfo.SendAddonMessage("RG9", "test", "GUILD");
+  print(msgPrefix .. "Hello World!");
+ 
+--   C_ChatInfo.SendAddonMessage("RG9", "test", "GUILD");
 end
 
-SlashCmdList["ROTUS"] = function()
+SlashCmdList["ROTUS"] = function(cmd)
   local msg = "";
-  if(lastPicked ~=  0) then
+  if(lastPickedHour ~=  nil and lastPickedMinute ~= nil) then
+    local nextWindowFromHours, nextWindowFromMinutes = addMinutes(lastPickedHour, lastPickedMinute, 45)
+    local nextWindowToHours, nextWindowToMinutes = addMinutes(nextWindowFromHours, nextWindowFromMinutes, 30)
 
-    local nextWindowFrom = lastPicked + 45 * 60
-    local nextWindowTo = lastPicked + (45 + 30) * 60
-
-    msg = "[RotusGang] " .. lastPickedBy .. " picked the " .. rotusItemLink .. " at " .. date("%H:%M", timestamp) .. "! Next window " .. date("%H:%M", nextWindowFrom) .. " - " .. date("%H:%M", nextWindowTo) .. "."
+    msg = lastPickedBy .. " picked the " .. rotusItemLinkItemInfo .. " at " .. addLeadingZero(lastPickedHour) .. ":" .. addLeadingZero(lastPickedMinute) .. "! Next window " .. addLeadingZero(nextWindowFromHours) .. ":" .. addLeadingZero(nextWindowFromMinutes) .. " - " .. addLeadingZero(nextWindowToHours) .. ":" .. addLeadingZero(nextWindowToMinutes) .. "."
   else
-    msg = "[RotusGang] No timer currently."
+    msg = "No timer currently."
   end
 
-  if UnitInRaid("player") then
-    SendChatMessage(msg, "RAID");
+  if(cmd == "chat") then
+    if UnitInRaid("player") then
+      SendChatMessage("[RotusGang] " .. msg, "RAID");
+    else
+      SendChatMessage("[RotusGang] " .. msg, "PARTY");
+    end
   else
-    SendChatMessage(msg, "PARTY");
+    C_ChatInfo.SendAddonMessage("RG9", msgPrefix .. msg, channel);
   end
 end
 
@@ -70,28 +79,35 @@ f:SetScript("OnEvent", function(event,...)
   if(type == "CHAT_MSG_ADDON") then
     local type, prefix, msg, channel, fromGuid, fromName = ...
 
-    local timestamp = GetServerTime()
-    if(msg == "test") then
-      print(msgPrefix .. fromName .. " is testing broadcasting");
-    elseif(msg == "ping") then
-      print(msgPrefix .. "ping received from " .. fromName .. ".")
-      C_ChatInfo.SendAddonMessage("RG9", "pong", "GUILD");
-    elseif(msg == "pong") then
-      print(msgPrefix .. fromName .. " replied with a pong.")
-    elseif(msg == "picking") then
-      print(msgPrefix .. date("%H:%M:%S", timestamp) .. ": " .. fromName .. " is picking a " .. rotusItemLink .. "!")
-    elseif(msg == "interrupted") then
-      print(msgPrefix .. date("%H:%M:%S", timestamp) .. ": " .. fromName .. " is interrupted!")
-    elseif(msg == "failed") then
-      print(msgPrefix .. date("%H:%M:%S", timestamp) .. ": " .. fromName .. " failed to pick up the " .. rotusItemLink .. "!")
-    elseif(msg == "picked") then
-      lastPicked = timestamp
-      lastPickedBy = fromName
-      local nextWindowFrom = timestamp + 45 * 60
-      local nextWindowTo = timestamp + (45 + 30) * 60
-
-      print(msgPrefix ..date("%H:%M:%S", timestamp) .. ": " .. fromName .. " picked the " .. rotusItemLink .. " at " .. date("%H:%M", timestamp) .. "! Next window " .. date("%H:%M", nextWindowFrom) .. " - " .. date("%H:%M", nextWindowTo) .. ".")
-    end
+    if(prefix == "RG9") then
+      local hour, min = GetGameTime();
+      if(msg == "test") then
+        print(msgPrefix .. fromName .. " is testing broadcasting");
+      elseif(msg == "ping") then
+        print(msgPrefix .. "Ping request received from " .. fromName .. ".")
+        C_ChatInfo.SendAddonMessage("RG9", "pong", channel);
+      elseif(msg == "pong") then
+        print(msgPrefix .. fromName .. " replied with a pong (v".. VERSION ..")")
+      elseif(msg == "picking") then
+        print(msgPrefix ..  fromName .. " is picking a " .. rotusItemLink .. "!")
+      elseif(msg == "interrupted") then
+        print(msgPrefix .. fromName .. " is interrupted!")
+      elseif(msg == "failed") then
+        print(msgPrefix .. fromName .. " failed to pick up the " .. rotusItemLink .. "!")
+      elseif(msg == "picked") then
+        lastPickedHour = hour
+        lastPickedMinute = min
+        lastPickedBy = fromName
+  
+        local nextWindowFromHours, nextWindowFromMinutes = addMinutes(hour, min, 45)
+        local nextWindowToHours, nextWindowToMinutes = addMinutes(nextWindowFromHours, nextWindowFromMinutes, 30)
+  
+  
+        print(msgPrefix .. fromName .. " picked the " .. rotusItemLink .. " at " .. addLeadingZero(hour) .. ":" .. addLeadingZero(min) .. "! Next window " .. addLeadingZero(nextWindowFromHours) .. ":" .. addLeadingZero(nextWindowFromMinutes) .. " - " .. addLeadingZero(nextWindowToHours) .. ":" .. addLeadingZero(nextWindowToMinutes) .. ".")
+      else
+        print(msg)
+      end
+    end   
   end
 
   if(type == "CHAT_MSG_LOOT") then
@@ -106,7 +122,7 @@ f:SetScript("OnEvent", function(event,...)
 
         if(itemId == rotusItemId) then
           if debug then print("Broadcasted rotus pickup!"); end
-          C_ChatInfo.SendAddonMessage("RG9", "picked", "GUILD");
+          C_ChatInfo.SendAddonMessage("RG9", "picked", channel);
         end
       end
     end
@@ -118,7 +134,7 @@ f:SetScript("OnEvent", function(event,...)
       if(debounce("picking", 0.5)) then
         if debug then print("started picking"); end
         currentlyPickingGuid = guid
-        C_ChatInfo.SendAddonMessage("RG9", "picking", "GUILD");
+        C_ChatInfo.SendAddonMessage("RG9", "picking", channel);
       end
     end
   end
@@ -128,7 +144,7 @@ f:SetScript("OnEvent", function(event,...)
     if(actor == "player" and spellId == gatheringSpellid and guid == currentlyPickingGuid) then
       if(debounce("interrupted", 0.5)) then
         if debug then print("interrupted"); end
-        C_ChatInfo.SendAddonMessage("RG9", "interrupted", "GUILD");
+        C_ChatInfo.SendAddonMessage("RG9", "interrupted", channel);
       end
     end
   end
@@ -141,7 +157,7 @@ f:SetScript("OnEvent", function(event,...)
       if(currentlyPickingGuid == guid) then
         if(debounce("failed", 0.5)) then
           if debug then print("failed pickup") end
-          C_ChatInfo.SendAddonMessage("RG9", "failed", "GUILD");
+          C_ChatInfo.SendAddonMessage("RG9", "failed", channel);
         end
       end
     end
@@ -155,4 +171,24 @@ function getItemId(itemString)
   end
   local _, _, Color, Ltype, Id, Enchant, Gem1, Gem2, Gem3, Gem4, Suffix, Unique, LinkLvl, reforging, Name = string.find(itemString, "|?c?f?f?(%x*)|?H?([^:]*):?(%d+):?(%d*):?(%d*):?(%d*):?(%d*):?(%d*):?(%-?%d*):?(%-?%d*):?(%d*):?(%d*)|?h?%[?([^%[%]]*)%]?|?h?|?r?")
   return tonumber(Id)
+end
+
+function addMinutes(hours, minutes, addedMinutes) 
+  if(minutes + addedMinutes <= 59) then
+    return hours, minutes + addedMinutes
+  else
+    if(hours + 1 <= 23) then
+      return hours + 1, minutes + addedMinutes - 60
+    else
+      return hours + 1 - 24, minutes + addedMinutes - 60
+    end
+  end
+end
+
+function addLeadingZero(num)
+  if(num < 10) then
+    return "0" .. num
+  else
+    return num
+  end
 end
