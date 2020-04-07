@@ -1,4 +1,4 @@
-﻿VERSION = "0.0.3"
+﻿VERSION = "0.0.4"
 
 SLASH_TEST1 = "/test1"
 SLASH_ROTUS1 = "/rotus"
@@ -13,7 +13,7 @@ local gatheringSpellid = 2366
 local currentlyPickingGuid = ""
 
 local zones = {};
-zones["Tirisfal Glades"] = "EPL"
+zones["Eastern Plaguelands"] = "EPL"
 zones["Winterspring"] = "WS"
 zones["Silithus"] = "Silithus"
 zones["Burning Steppes"] = "Steppes"
@@ -101,7 +101,7 @@ f:SetScript("OnEvent", function(event,...)
         print(msgPrefix .. "Ping request received from " .. fromName .. ".")
         C_ChatInfo.SendAddonMessage("RG9", "pong", channel);
       elseif(msg == "pong") then
-        print(msgPrefix .. fromName .. " replied with a pong (v".. VERSION ..")")
+        print(msgPrefix .. fromName .. " replied with a pong")
       elseif(msg == "picking") then
         print(msgPrefix ..  fromName .. " is picking a " .. rotusItemLink .. "!")
       elseif(msg == "interrupted") then
