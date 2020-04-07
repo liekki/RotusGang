@@ -73,6 +73,11 @@ f:SetScript("OnEvent", function(event,...)
     local timestamp = GetServerTime()
     if(msg == "test") then
       print(msgPrefix .. fromName .. " is testing broadcasting");
+    elseif(msg == "ping") then
+      print(msgPrefix .. "ping received from " .. fromName .. ".")
+      C_ChatInfo.SendAddonMessage("RG9", "pong", "GUILD");
+    elseif(msg == "pong") then
+      print(msgPrefix .. fromName .. " replied with a pong.")
     elseif(msg == "picking") then
       print(msgPrefix .. date("%H:%M:%S", timestamp) .. ": " .. fromName .. " is picking a " .. rotusItemLink .. "!")
     elseif(msg == "interrupted") then
