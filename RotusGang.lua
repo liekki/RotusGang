@@ -82,7 +82,7 @@ C_ChatInfo.RegisterAddonMessagePrefix("RG9");
 f:RegisterEvent("CHAT_MSG_ADDON")
 f:RegisterEvent("CHAT_MSG_LOOT")
 f:RegisterEvent("UNIT_SPELLCAST_SENT")
-f:RegisterEvent("UNIT_SPELLCAST_STOP")
+--f:RegisterEvent("UNIT_SPELLCAST_STOP")
 f:RegisterEvent("UNIT_SPELLCAST_FAILED")
 f:RegisterEvent("UNIT_SPELLCAST_INTERRUPTED")
 
@@ -90,9 +90,6 @@ f:RegisterEvent("UNIT_SPELLCAST_INTERRUPTED")
 f:SetScript("OnEvent", function(event,...)
   local type = ...
 
-  if(type == "UNIT_SPELLCAST_STOP") then 
-    print('stop', ...);
-  end
   if(type == "CHAT_MSG_ADDON") then
     local type, prefix, msg, channel, fromGuid, fromName = ...
 
