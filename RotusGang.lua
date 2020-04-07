@@ -1,4 +1,4 @@
-﻿VERSION = "0.1.3"
+﻿VERSION = "0.1.4"
 
 SLASH_TEST1 = "/test1"
 SLASH_ROTUS1 = "/rotus"
@@ -48,11 +48,11 @@ SlashCmdList["ROTUS"] = function(cmd)
 
   for zone,shorthand in pairs(zones) do
     local msg = "";
-    if(lastPickedHour[zone] ~=  nil and lastPickedMinute[zone] ~= nil) then
-      local nextWindowFromHours, nextWindowFromMinutes = addMinutes(lastPickedHour[zone], lastPickedMinute[zone], 45)
+    if(RotusGang_lastPickedHour[zone] ~=  nil and RotusGang_lastPickedMinute[zone] ~= nil) then
+      local nextWindowFromHours, nextWindowFromMinutes = addMinutes(RotusGang_lastPickedHour[zone], RotusGang_lastPickedMinute[zone], 45)
       local nextWindowToHours, nextWindowToMinutes = addMinutes(nextWindowFromHours, nextWindowFromMinutes, 30)
 
-      msg = lastPickedBy[zone] .. " picked the " .. rotusItemLinkItemInfo .. " in " .. zones[zone] .. " at " .. addLeadingZero(lastPickedHour[zone]) .. ":" .. addLeadingZero(lastPickedMinute[zone]) .. "! Next window " .. addLeadingZero(nextWindowFromHours) .. ":" .. addLeadingZero(nextWindowFromMinutes) .. " - " .. addLeadingZero(nextWindowToHours) .. ":" .. addLeadingZero(nextWindowToMinutes) .. "."
+      msg = RotusGang_lastPickedBy[zone] .. " picked the " .. rotusItemLinkItemInfo .. " in " .. zones[zone] .. " at " .. addLeadingZero(RotusGang_lastPickedHour[zone]) .. ":" .. addLeadingZero(RotusGang_lastPickedMinute[zone]) .. "! Next window " .. addLeadingZero(nextWindowFromHours) .. ":" .. addLeadingZero(nextWindowFromMinutes) .. " - " .. addLeadingZero(nextWindowToHours) .. ":" .. addLeadingZero(nextWindowToMinutes) .. "."
     else
       msg = "No timer currently for " .. shorthand .. "."
     end
@@ -120,26 +120,26 @@ f:SetScript("OnEvent", function(event,...)
       elseif(msgType == "picked") then
         local zone = param1
 
-        lastPickedHour[zone] = hour
-        lastPickedMinute[zone] = min
-        lastPickedBy[zone] = fromName
+        RotusGang_lastPickedHour[zone] = hour
+        RotusGang_lastPickedMinute[zone] = min
+        RotusGang_lastPickedBy[zone] = fromName
   
         local nextWindowFromHours, nextWindowFromMinutes = addMinutes(hour, min, 45)
         local nextWindowToHours, nextWindowToMinutes = addMinutes(nextWindowFromHours, nextWindowFromMinutes, 30)
   
   
-        print(msgPrefix .. lastPickedBy[zone] .. " picked the " .. rotusItemLink .. " in " .. zones[zone] .. " at " .. addLeadingZero(hour) .. ":" .. addLeadingZero(min) .. "! Next window " .. addLeadingZero(nextWindowFromHours) .. ":" .. addLeadingZero(nextWindowFromMinutes) .. " - " .. addLeadingZero(nextWindowToHours) .. ":" .. addLeadingZero(nextWindowToMinutes) .. ".")
+        print(msgPrefix .. RotusGang_lastPickedBy[zone] .. " picked the " .. rotusItemLink .. " in " .. zones[zone] .. " at " .. addLeadingZero(hour) .. ":" .. addLeadingZero(min) .. "! Next window " .. addLeadingZero(nextWindowFromHours) .. ":" .. addLeadingZero(nextWindowFromMinutes) .. " - " .. addLeadingZero(nextWindowToHours) .. ":" .. addLeadingZero(nextWindowToMinutes) .. ".")
       elseif(msgType == "lost") then
         zone = param1
 
-        lastPickedHour[zone] = hour
-        lastPickedMinute[zone] = min
-        lastPickedBy[zone] = "Someone"
+        RotusGang_lastPickedHour[zone] = hour
+        RotusGang_lastPickedMinute[zone] = min
+        RotusGang_lastPickedBy[zone] = "Someone"
   
         local nextWindowFromHours, nextWindowFromMinutes = addMinutes(hour, min, 45)
         local nextWindowToHours, nextWindowToMinutes = addMinutes(nextWindowFromHours, nextWindowFromMinutes, 30)
   
-        print(msgPrefix .. lastPickedBy[zone] .. " picked the " .. rotusItemLink .. " at " .. addLeadingZero(hour) .. ":" .. addLeadingZero(min) .. " :( Next window " .. addLeadingZero(nextWindowFromHours) .. ":" .. addLeadingZero(nextWindowFromMinutes) .. " - " .. addLeadingZero(nextWindowToHours) .. ":" .. addLeadingZero(nextWindowToMinutes) .. ".")      
+        print(msgPrefix .. RotusGang_lastPickedBy[zone] .. " picked the " .. rotusItemLink .. " at " .. addLeadingZero(hour) .. ":" .. addLeadingZero(min) .. " :( Next window " .. addLeadingZero(nextWindowFromHours) .. ":" .. addLeadingZero(nextWindowFromMinutes) .. " - " .. addLeadingZero(nextWindowToHours) .. ":" .. addLeadingZero(nextWindowToMinutes) .. ".")      
       elseif(msgType == "broadcast") then
         print(param1)
       end
