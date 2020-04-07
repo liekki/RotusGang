@@ -1,4 +1,4 @@
-﻿VERSION = "0.1.0"
+﻿VERSION = "0.1.1"
 
 SLASH_TEST1 = "/test1"
 SLASH_ROTUS1 = "/rotus"
@@ -100,10 +100,10 @@ f:SetScript("OnEvent", function(event,...)
       if(msgType == "test") then
         print(msgPrefix .. fromName .. " is testing broadcasting");
       elseif(msgType == "ping") then
-        print(msgPrefix .. "Ping request received from " .. fromName .. " (v".. param1 ..").")
+        print(msgPrefix .. "Ping request received from " .. fromName .. ".")
         C_ChatInfo.SendAddonMessage("RG9", "pong,".. VERSION, channel);
       elseif(msgType == "pong") then
-        print(msgPrefix .. fromName .. " replied with a pong")
+        print(msgPrefix .. fromName .. " replied with a pong (v".. param1 ..")")
       elseif(msgType == "picking") then
         print(msgPrefix ..  fromName .. " is picking a " .. rotusItemLink .. " in " .. zones[param1] .. "!")
       elseif(msgType == "interrupted") then
