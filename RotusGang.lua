@@ -1,4 +1,4 @@
-﻿VERSION = "0.1.1"
+﻿VERSION = "0.1.2"
 
 SLASH_TEST1 = "/test1"
 SLASH_ROTUS1 = "/rotus"
@@ -103,9 +103,11 @@ f:SetScript("OnEvent", function(event,...)
         print(msgPrefix .. "Ping request received from " .. fromName .. ".")
         C_ChatInfo.SendAddonMessage("RG9", "pong,".. VERSION, channel);
       elseif(msgType == "pong") then
-        print(msgPrefix .. fromName .. " replied with a pong (v".. param1 ..")")
+        if param1 ~= nil then reportedVersion = param1 else reportedVersion = "?" end
+        print(msgPrefix .. fromName .. " replied with a pong (v".. reportedVersion ..")")
       elseif(msgType == "picking") then
-        print(msgPrefix ..  fromName .. " is picking a " .. rotusItemLink .. " in " .. zones[param1] .. "!")
+        if param1 ~= nil then pickZone = param1 else pickZone = "?" end
+        print(msgPrefix ..  fromName .. " is picking a " .. rotusItemLink .. " in " .. pickZone .. "!")
       elseif(msgType == "interrupted") then
         print(msgPrefix .. fromName .. "'s attempt was interrupted!")
       elseif(msgType == "failed") then
