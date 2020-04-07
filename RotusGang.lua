@@ -1,4 +1,4 @@
-﻿VERSION = "0.1.2"
+﻿VERSION = "0.1.3"
 
 SLASH_TEST1 = "/test1"
 SLASH_ROTUS1 = "/rotus"
@@ -22,9 +22,9 @@ local channel = "GUILD"
 --local channel = "RAID"
 local debug = false
 
-local lastPickedHour = {};
-local lastPickedMinute = {};
-local lastPickedBy = {};
+local RotusGang_lastPickedHour = {};
+local RotusGang_lastPickedMinute = {};
+local RotusGang_lastPickedBy = {};
 
 now = GetTime();
 antiSpam = {};
@@ -37,7 +37,12 @@ end
 SlashCmdList["ROTUS"] = function(cmd)
 
   if (cmd == "lost") then
-    C_ChatInfo.SendAddonMessage("RG9", "lost", channel);
+    C_ChatInfo.SendAddonMessage("RG9", "lost,"..GetZoneText(), channel);
+    return
+  end
+
+  if (cmd == "ping") then
+    C_ChatInfo.SendAddonMessage("RG9", "ping", channel);
     return
   end
 
@@ -125,7 +130,7 @@ f:SetScript("OnEvent", function(event,...)
   
         print(msgPrefix .. lastPickedBy[zone] .. " picked the " .. rotusItemLink .. " in " .. zones[zone] .. " at " .. addLeadingZero(hour) .. ":" .. addLeadingZero(min) .. "! Next window " .. addLeadingZero(nextWindowFromHours) .. ":" .. addLeadingZero(nextWindowFromMinutes) .. " - " .. addLeadingZero(nextWindowToHours) .. ":" .. addLeadingZero(nextWindowToMinutes) .. ".")
       elseif(msgType == "lost") then
-        local zone = param1
+        zone = param1
 
         lastPickedHour[zone] = hour
         lastPickedMinute[zone] = min
