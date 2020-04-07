@@ -10,7 +10,7 @@ local gatheringSpellid = 2366
 
 local currentlyPickingGuid = ""
 
-local debug = true
+local debug = false
 
 local lastPicked = 0;
 local lastPickedBy = "";
