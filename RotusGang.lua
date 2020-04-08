@@ -1,4 +1,4 @@
-﻿VERSION = "0.2.4"
+﻿VERSION = "0.2.5"
 
 SLASH_TEST1 = "/test1"
 SLASH_ROTUS1 = "/rotus"
@@ -208,7 +208,8 @@ f:SetScript("OnEvent", function(event,...)
 
         if(RotusGang_lastPickedSerial[param1] == nil) then
           if(isSerialCurrent(param2)) then 
-            print("Received new timer for " .. param1 )
+            print(msgPrefix .. "Received new timer for " .. param1)
+
             RotusGang_lastPickedSerial[param1] = tonumber(param2)
             RotusGang_lastPickedHour[param1] = tonumber(param3)
             RotusGang_lastPickedMinute[param1] = tonumber(param4)
@@ -218,7 +219,9 @@ f:SetScript("OnEvent", function(event,...)
           local currentSerial = tonumber(RotusGang_lastPickedSerial[param1]) 
           local incomingSerial = tonumber(param2)
 
-          if(isSerialCurrent(incomingSerial, currentSerial)) then
+          if(isSerialCurrent(incomingSerial) and incomingSerial > currentSerial) then
+            print(msgPrefix .. "Received new timer for " .. param1)
+
             RotusGang_lastPickedSerial[param1] = tonumber(param2)
             RotusGang_lastPickedHour[param1] = tonumber(param3)
             RotusGang_lastPickedMinute[param1] = tonumber(param4)
