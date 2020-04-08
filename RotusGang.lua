@@ -1,4 +1,4 @@
-﻿VERSION = "0.2.3"
+﻿VERSION = "0.2.4"
 
 SLASH_TEST1 = "/test1"
 SLASH_ROTUS1 = "/rotus"
@@ -7,10 +7,9 @@ local msgPrefix = "|cff352838[|r|cff915ea7R|r|cffc572dcotusGang|r|cff352838]|r "
 
 local rotusItemId = 13468
 local rotusItemLink = "\124cff1eff00\124Hitem:13468::::::::60:::::\124h[Black Lotus]\124h\124r"
-local rotusItemLinkItemInfo = select(2,GetItemInfo(13468))
+local rotusItemLinkItemInfo = "[Black Lotus]"
 local gatheringSpellid = 2366
 local timeSinceLastUpdate = 0;
-
 local currentlyPickingGuid = ""
 
 local zones = {};
@@ -50,26 +49,44 @@ SlashCmdList["ROTUS"] = function(cmd)
 
   local numTimers = 0;
 
+  --local currentHour, currentMin = GetGameTime();
+  --currentHour = addLeadingZero(currentHour);
+  --currentMin = addLeadingZero(currentMin);
+  --local currentDay = date("%d");
+  --local currentYear = date("%Y");
+  --local currentMonth = date("%m");
+
   for zone,shorthand in pairs(zones) do
     local msg = "";
     if(RotusGang_lastPickedHour[zone] ~=  nil and RotusGang_lastPickedMinute[zone] ~= nil) then
+      --print("[" .. zone .. "] picked serial: " .. RotusGang_lastPickedSerial[zone])
+      --print("[" .. zone .. "] current serial: " .. getCurrentSerial())
+      --print("[" .. zone .. "] diff: " ..getCurrentSerial() - RotusGang_lastPickedSerial[zone])
+      --local diff = currentSerial - RotusGang_lastPickedSerial[zone]
 
-      local nextWindowFromHours, nextWindowFromMinutes = addMinutes(RotusGang_lastPickedHour[zone], RotusGang_lastPickedMinute[zone], 45)
-      local nextWindowToHours, nextWindowToMinutes = addMinutes(nextWindowFromHours, nextWindowFromMinutes, 30)
+      if(isSerialCurrent(RotusGang_lastPickedSerial[zone])) then
+        local nextWindowFromHours, nextWindowFromMinutes = addMinutes(RotusGang_lastPickedHour[zone], RotusGang_lastPickedMinute[zone], 45)
+        local nextWindowToHours, nextWindowToMinutes = addMinutes(nextWindowFromHours, nextWindowFromMinutes, 30)
 
-      msg = RotusGang_lastPickedBy[zone] .. " picked the " .. rotusItemLinkItemInfo .. " in " .. zones[zone] .. " at " .. addLeadingZero(RotusGang_lastPickedHour[zone]) .. ":" .. addLeadingZero(RotusGang_lastPickedMinute[zone]) .. "! Next window " .. addLeadingZero(nextWindowFromHours) .. ":" .. addLeadingZero(nextWindowFromMinutes) .. " - " .. addLeadingZero(nextWindowToHours) .. ":" .. addLeadingZero(nextWindowToMinutes) .. "."
+        msg = RotusGang_lastPickedBy[zone] .. " picked the " .. rotusItemLinkItemInfo .. " in " .. zones[zone] .. " at " .. addLeadingZero(RotusGang_lastPickedHour[zone]) .. ":" .. addLeadingZero(RotusGang_lastPickedMinute[zone]) .. "! Next window " .. addLeadingZero(nextWindowFromHours) .. ":" .. addLeadingZero(nextWindowFromMinutes) .. " - " .. addLeadingZero(nextWindowToHours) .. ":" .. addLeadingZero(nextWindowToMinutes) .. "."
 
-      numTimers = numTimers + 1;
+        numTimers = numTimers + 1;
 
-      if(cmd == "chat") then
-        if UnitInRaid("player") then
-          SendChatMessage("[RotusGang] " .. msg, "RAID");
+        if(cmd == "chat") then
+          if UnitInRaid("player") then
+            SendChatMessage("[RotusGang] " .. msg, "RAID");
+          else
+            SendChatMessage("[RotusGang] " .. msg, "PARTY");
+          end
         else
-          SendChatMessage("[RotusGang] " .. msg, "PARTY");
-        end
+          C_ChatInfo.SendAddonMessage("RG9", "broadcast," .. msgPrefix .. msg, channel);
+        end  
       else
-        C_ChatInfo.SendAddonMessage("RG9", "broadcast," .. msgPrefix .. msg, channel);
-      end  
+          RotusGang_lastPickedSerial[zone] = nil;
+          RotusGang_lastPickedHour[zone] = nil;
+          RotusGang_lastPickedMinute[zone] = nil;
+          RotusGang_lastPickedBy[zone] = nil;
+      end
     end
   end
 
@@ -121,9 +138,9 @@ f:SetScript("OnEvent", function(event,...)
   end
 
   if(type == "CHAT_MSG_ADDON") then
-    local type, prefix, msg, channel, fromGuid, fromName = ...
+    local type, prefix, msg, distributionChannel, fromGuid, fromName = ...
 
-    if(prefix == "RG9") then
+    if(prefix == "RG9" and distributionChannel == channel) then
       local hour, min = GetGameTime();
 
       local msgType, param1, param2, param3, param4, param5 = strsplit(",", msg);
@@ -150,7 +167,7 @@ f:SetScript("OnEvent", function(event,...)
         local year = date("%Y");
         local month = date("%m");
 
-        RotusGang_lastPickedSerial[zone] = year..month..day..hour..min
+        RotusGang_lastPickedSerial[zone] = year..month..day..addLeadingZero(hour)..addLeadingZero(min)
         RotusGang_lastPickedHour[zone] = hour
         RotusGang_lastPickedMinute[zone] = min
         RotusGang_lastPickedBy[zone] = fromName
@@ -167,7 +184,7 @@ f:SetScript("OnEvent", function(event,...)
         local year = date("%Y");
         local month = date("%m");
         
-        RotusGang_lastPickedSerial[zone] = year..month..day..hour..min
+        RotusGang_lastPickedSerial[zone] = year..month..day..addLeadingZero(hour)..addLeadingZero(min)
         RotusGang_lastPickedHour[zone] = hour
         RotusGang_lastPickedMinute[zone] = min
         RotusGang_lastPickedBy[zone] = "Someone"
@@ -189,13 +206,24 @@ f:SetScript("OnEvent", function(event,...)
       elseif(msgType == "syncResponse") then
         if debug then print("received sync response from " .. fromName) end;
 
-        if(RotusGang_lastPickedSerial[param1] == nil or tonumber(RotusGang_lastPickedSerial[param1]) < tonumber(param2)) then
-          print("Received new timer for " .. param1)
+        if(RotusGang_lastPickedSerial[param1] == nil) then
+          if(isSerialCurrent(param2)) then 
+            print("Received new timer for " .. param1 )
+            RotusGang_lastPickedSerial[param1] = tonumber(param2)
+            RotusGang_lastPickedHour[param1] = tonumber(param3)
+            RotusGang_lastPickedMinute[param1] = tonumber(param4)
+            RotusGang_lastPickedBy[param1] = param5
+          end 
+        else
+          local currentSerial = tonumber(RotusGang_lastPickedSerial[param1]) 
+          local incomingSerial = tonumber(param2)
 
-          RotusGang_lastPickedSerial[param1] = tonumber(param2)
-          RotusGang_lastPickedHour[param1] = tonumber(param3)
-          RotusGang_lastPickedMinute[param1] = tonumber(param4)
-          RotusGang_lastPickedBy[param1] = param5
+          if(isSerialCurrent(incomingSerial, currentSerial)) then
+            RotusGang_lastPickedSerial[param1] = tonumber(param2)
+            RotusGang_lastPickedHour[param1] = tonumber(param3)
+            RotusGang_lastPickedMinute[param1] = tonumber(param4)
+            RotusGang_lastPickedBy[param1] = param5
+          end
         end
       end
     end   
@@ -299,4 +327,35 @@ function addLeadingZero(num)
   else
     return num
   end
+end
+
+function getCurrentSerial() 
+  local currentHour, currentMin = GetGameTime();
+  currentHour = addLeadingZero(currentHour);
+  currentMin = addLeadingZero(currentMin);
+  local currentDay = date("%d");
+  local currentYear = date("%Y");
+  local currentMonth = date("%m");
+
+  return tonumber(currentYear..currentMonth..currentDay..currentHour..currentMin)
+end
+
+function isSerialCurrent(serial, toCompare)
+  local threshold = 120 -- 120 minutes for now
+
+  if toCompare == nil then toCompare = getCurrentSerial() end
+
+  local diff = toCompare - serial -- diff between toCompare and given
+
+  if(diff > threshold) then
+    -- old timer
+    return false
+  elseif(diff < (threshold * -1)) then
+    -- timer is in the future
+    return false
+  else
+    -- timer is in within threshold
+    return true
+  end
+
 end
