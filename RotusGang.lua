@@ -1,4 +1,4 @@
-﻿VERSION = "0.2.5"
+﻿VERSION = "0.2.6"
 
 SLASH_TEST1 = "/test1"
 SLASH_ROTUS1 = "/rotus"
@@ -27,6 +27,11 @@ antiSpam = {};
 
 SlashCmdList["TEST"] = function(msg)
   print(msgPrefix .. "Hello World!");
+  if(debounce("pickingSound", 60)) then
+    PlaySoundFile("Interface\\AddOns\\RotusGang\\kaching.ogg", "Master");
+  end
+
+  print(isSerialCurrent(getCurrentSerial()))
 --   C_ChatInfo.SendAddonMessage("RG9", "test", "GUILD");
 end
 
@@ -49,20 +54,9 @@ SlashCmdList["ROTUS"] = function(cmd)
 
   local numTimers = 0;
 
-  --local currentHour, currentMin = GetGameTime();
-  --currentHour = addLeadingZero(currentHour);
-  --currentMin = addLeadingZero(currentMin);
-  --local currentDay = date("%d");
-  --local currentYear = date("%Y");
-  --local currentMonth = date("%m");
-
   for zone,shorthand in pairs(zones) do
     local msg = "";
     if(RotusGang_lastPickedHour[zone] ~=  nil and RotusGang_lastPickedMinute[zone] ~= nil) then
-      --print("[" .. zone .. "] picked serial: " .. RotusGang_lastPickedSerial[zone])
-      --print("[" .. zone .. "] current serial: " .. getCurrentSerial())
-      --print("[" .. zone .. "] diff: " ..getCurrentSerial() - RotusGang_lastPickedSerial[zone])
-      --local diff = currentSerial - RotusGang_lastPickedSerial[zone]
 
       if(isSerialCurrent(RotusGang_lastPickedSerial[zone])) then
         local nextWindowFromHours, nextWindowFromMinutes = addMinutes(RotusGang_lastPickedHour[zone], RotusGang_lastPickedMinute[zone], 45)
@@ -113,7 +107,6 @@ f:RegisterEvent("VARIABLES_LOADED")
 f:RegisterEvent("CHAT_MSG_ADDON")
 f:RegisterEvent("CHAT_MSG_LOOT")
 f:RegisterEvent("UNIT_SPELLCAST_SENT")
---f:RegisterEvent("UNIT_SPELLCAST_STOP")
 f:RegisterEvent("UNIT_SPELLCAST_FAILED")
 f:RegisterEvent("UNIT_SPELLCAST_INTERRUPTED")
 
@@ -154,6 +147,9 @@ f:SetScript("OnEvent", function(event,...)
         if param1 ~= nil then reportedVersion = param1 else reportedVersion = "?" end
         print(msgPrefix .. fromName .. " replied with a pong (v".. reportedVersion ..")")
       elseif(msgType == "picking") then
+        if(debounce("pickingSound", 60)) then
+          PlaySoundFile("Interface\\AddOns\\RotusGang\\lotus.ogg", "Master");
+        end
         if param1 ~= nil then pickZone = param1 else pickZone = "?" end
         print(msgPrefix ..  fromName .. " is picking a " .. rotusItemLink .. " in " .. pickZone .. "!")
       elseif(msgType == "interrupted") then
@@ -161,6 +157,10 @@ f:SetScript("OnEvent", function(event,...)
       elseif(msgType == "failed") then
         print(msgPrefix .. fromName .. "'s attempt to pick up the " .. rotusItemLink .. " failed!")
       elseif(msgType == "picked") then
+        if(debounce("pickedSound", 60)) then
+          PlaySoundFile("Interface\\AddOns\\RotusGang\\kaching.ogg", "Master");
+        end
+
         local zone = param1
 
         local day = date("%d");
@@ -200,32 +200,37 @@ f:SetScript("OnEvent", function(event,...)
 
         for zone,shorthand in pairs(zones) do
           if(RotusGang_lastPickedSerial[zone] ~= nil) then
-            C_ChatInfo.SendAddonMessage("RG9", "syncResponse," .. zone .. "," .. RotusGang_lastPickedSerial[zone] .. "," .. RotusGang_lastPickedHour[zone] .. "," .. RotusGang_lastPickedMinute[zone] .. "," .. RotusGang_lastPickedBy[zone], channel);
+            if(isSerialCurrent(RotusGang_lastPickedSerial[zone])) then
+              if debug then print("sending sync response for " .. zone) end;
+              C_ChatInfo.SendAddonMessage("RG9", "syncResponse," .. zone .. "," .. RotusGang_lastPickedSerial[zone] .. "," .. RotusGang_lastPickedHour[zone] .. "," .. RotusGang_lastPickedMinute[zone] .. "," .. RotusGang_lastPickedBy[zone], channel);
+            end
           end
         end
       elseif(msgType == "syncResponse") then
-        if debug then print("received sync response from " .. fromName) end;
+        if(debounce("syncResponse", 1)) then
+          if debug then print("received sync response from " .. fromName) end;
 
-        if(RotusGang_lastPickedSerial[param1] == nil) then
-          if(isSerialCurrent(param2)) then 
-            print(msgPrefix .. "Received new timer for " .. param1)
+          if(RotusGang_lastPickedSerial[param1] == nil) then
+            if(isSerialCurrent(param2)) then 
+              print(msgPrefix .. "Received new timer for " .. param1)
 
-            RotusGang_lastPickedSerial[param1] = tonumber(param2)
-            RotusGang_lastPickedHour[param1] = tonumber(param3)
-            RotusGang_lastPickedMinute[param1] = tonumber(param4)
-            RotusGang_lastPickedBy[param1] = param5
-          end 
-        else
-          local currentSerial = tonumber(RotusGang_lastPickedSerial[param1]) 
-          local incomingSerial = tonumber(param2)
+              RotusGang_lastPickedSerial[param1] = tonumber(param2)
+              RotusGang_lastPickedHour[param1] = tonumber(param3)
+              RotusGang_lastPickedMinute[param1] = tonumber(param4)
+              RotusGang_lastPickedBy[param1] = param5
+            end 
+          else
+            local currentSerial = tonumber(RotusGang_lastPickedSerial[param1]) 
+            local incomingSerial = tonumber(param2)
 
-          if(isSerialCurrent(incomingSerial) and incomingSerial > currentSerial) then
-            print(msgPrefix .. "Received new timer for " .. param1)
+            if(isSerialCurrent(incomingSerial) and incomingSerial > currentSerial) then
+              print(msgPrefix .. "Received new timer for " .. param1)
 
-            RotusGang_lastPickedSerial[param1] = tonumber(param2)
-            RotusGang_lastPickedHour[param1] = tonumber(param3)
-            RotusGang_lastPickedMinute[param1] = tonumber(param4)
-            RotusGang_lastPickedBy[param1] = param5
+              RotusGang_lastPickedSerial[param1] = tonumber(param2)
+              RotusGang_lastPickedHour[param1] = tonumber(param3)
+              RotusGang_lastPickedMinute[param1] = tonumber(param4)
+              RotusGang_lastPickedBy[param1] = param5
+            end
           end
         end
       end
@@ -348,7 +353,23 @@ function isSerialCurrent(serial, toCompare)
 
   if toCompare == nil then toCompare = getCurrentSerial() end
 
-  local diff = toCompare - serial -- diff between toCompare and given
+  local serialYear = tonumber(string.sub(tostring(serial), 1, 4));
+  local serialMonth = tonumber(string.sub(tostring(serial), 5, 6));
+  local serialDay = tonumber(string.sub(tostring(serial), 7, 8));
+  local serialHours = tonumber(string.sub(tostring(serial), 9, 10));
+  local serialMinutes = tonumber(string.sub(tostring(serial), 11, 12));
+
+  local serialTime = time({year=serialYear, month=serialMonth, day=serialDay, hour=serialHours, min=serialMinutes, sec=0})
+
+  local toCompareYear = tonumber(string.sub(tostring(toCompare), 1, 4));
+  local toCompareMonth = tonumber(string.sub(tostring(toCompare), 5, 6));
+  local toCompareDay = tonumber(string.sub(tostring(toCompare), 7, 8));
+  local toCompareHours = tonumber(string.sub(tostring(toCompare), 9, 10));
+  local toCompareMinutes = tonumber(string.sub(tostring(toCompare), 11, 12));
+
+  local toCompareTime = time({year=toCompareYear, month=toCompareMonth, day=toCompareDay, hour=toCompareHours, min=toCompareMinutes, sec=0})
+
+  local diff = (toCompareTime - serialTime) / 60 
 
   if(diff > threshold) then
     -- old timer
