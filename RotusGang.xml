@@ -2,10 +2,7 @@
 
 <Script file="RotusGang.lua"/>
     <Frame name="RotusGang_Frame">
-        <Scripts>
-            <OnLoad>
-                RotusGang_OnLoad();
-            </OnLoad>
+        <Scripts>           
         </Scripts>
     </Frame>
 </Ui>

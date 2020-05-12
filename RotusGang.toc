@@ -1,10 +1,10 @@
 ﻿## Interface: 11303
 ## Title: RotusGang
 ## Author: <Theorycraft> Shazzrah EU
-## Version: 0.2.6
+## Version: 0.2.7
 ## Notes: Broadcasts when you loot black lotus and listens to any broadcasts to set a respawn timer
 ## Dependencies:
 ## OptionalDeps:
 ## SavedVariablesPerCharacter:
-## SavedVariables: RotusGang_lastPickedSerial, RotusGang_lastPickedHour, RotusGang_lastPickedMinute, RotusGang_lastPickedBy
+## SavedVariables: RotusGang_lastPickedSerial, RotusGang_lastPickedHour, RotusGang_lastPickedMinute, RotusGang_lastPickedBy, RotusGang_arrowHidden
 RotusGang.xml

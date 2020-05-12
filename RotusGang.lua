@@ -1,4 +1,5 @@
-﻿VERSION = "0.2.6"
+﻿
+VERSION = "0.2.7"
 
 SLASH_TEST1 = "/test1"
 SLASH_ROTUS1 = "/rotus"
@@ -49,6 +50,19 @@ SlashCmdList["ROTUS"] = function(cmd)
 
   if (cmd == "ping") then
     C_ChatInfo.SendAddonMessage("RG9", "ping", channel);
+    return
+  end
+
+  if(cmd == "arrow") then
+    if(RotusGang_arrowHidden) then 
+      print(msgPrefix .. "Minimap arrow enabled.")
+      Minimap:SetPlayerTexture("Interface\\Minimap\\MinimapArrow")
+      RotusGang_arrowHidden = false
+    else
+      print(msgPrefix .. "Minimap arrow disabled.")
+      Minimap:SetPlayerTexture("Interface\\AddOns\\RotusGang\\Invisible")
+      RotusGang_arrowHidden = true
+    end
     return
   end
 
@@ -125,6 +139,15 @@ f:SetScript("OnEvent", function(event,...)
     end
     if(RotusGang_lastPickedBy == nil) then
       RotusGang_lastPickedBy = {};
+    end
+    if(RotusGang_arrowHidden == nil) then
+      RotusGang_arrowHidden = false;
+    else
+      if(RotusGang_arrowHidden) then 
+        Minimap:SetPlayerTexture("Interface\\AddOns\\RotusGang\\Invisible")
+      else
+        Minimap:SetPlayerTexture("Interface\\Minimap\\MinimapArrow")
+      end
     end
 
     C_ChatInfo.SendAddonMessage("RG9", "syncRequest", channel);
@@ -292,9 +315,6 @@ f:SetScript("OnEvent", function(event,...)
 
 end);
 
-function RotusGang_OnLoad()
-  
-end
 
 f:SetScript("OnUpdate", function(self, elapsed)
   timeSinceLastUpdate = timeSinceLastUpdate + elapsed;
